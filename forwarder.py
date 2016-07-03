@@ -143,7 +143,7 @@ def main():
                         help='InfluxDB password')
     parser.add_argument('--influx-db', required=True, help='InfluxDB database')
     parser.add_argument('--node-name', required=True,
-                        help='Sensor node name', nargs='+')
+                        help='Sensor node name', action="append")
     parser.add_argument('--verbose', help='Enable verbose output to stdout',
                         default=False, action='store_true')
     args = parser.parse_args()
