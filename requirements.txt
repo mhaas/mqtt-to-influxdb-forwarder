@@ -1,0 +1,8 @@
+argparse==1.2.1
+influxdb==3.0.0
+paho-mqtt==1.2
+python-dateutil==2.5.3
+pytz==2016.4
+requests==2.10.0
+six==1.10.0
+wsgiref==0.1.2
