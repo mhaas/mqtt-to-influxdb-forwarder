@@ -54,3 +54,11 @@ The following log excerpt should make the translation clearer:
     select value from bat,uv,temp,pressure limit 20; 
 
 The data stored in InfluxDB via this forwarder are easily visualized with [Grafana](http://grafana.org/)
+
+## License ##
+
+See the LICENSE file.
+
+## Versioning ##
+
+[Semantic Versioning](http://www.semver.org)
