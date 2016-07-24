@@ -38,7 +38,8 @@ class InfluxStore(MessageStore):
 
     logger = logging.getLogger("forwarder.InfluxStore")
 
-    def __init__(self, host, port, username, password, database):
+    def __init__(self, host, port, username, password_file, database):
+        password = open(password_file).read().strip()
         self.influx_client = InfluxDBClient(
             host=host, port=port, username=username, password=password, database=database)
         # influx_client.create_database('sensors')
@@ -98,8 +99,9 @@ class MQTTSource(MessageSource):
         def on_message(client, userdata, msg):
             self.logger.debug(
                 "Received MQTT message for topic %s with payload %s", msg.topic, msg.payload)
+            token_pattern = ur'(?:\w|-|\.)+'
             regex = re.compile(
-                ur'/(?P<node_name>\w+)/(?P<measurement_name>\w+)/?')
+                ur'/(?P<node_name>' + token_pattern + ')/(?P<measurement_name>' + token_pattern + ')/?')
             match = regex.match(msg.topic)
             if match is None:
                 self.logger.warn(
@@ -139,8 +141,8 @@ def main():
     parser.add_argument('--influx-port', required=True, help='InfluxDB port')
     parser.add_argument('--influx-user', required=True,
                         help='InfluxDB username')
-    parser.add_argument('--influx-pass', required=True,
-                        help='InfluxDB password')
+    parser.add_argument('--influx-pass-file', required=True,
+                        help='InfluxDB password file')
     parser.add_argument('--influx-db', required=True, help='InfluxDB database')
     parser.add_argument('--node-name', required=True,
                         help='Sensor node name', action="append")
@@ -154,7 +156,7 @@ def main():
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     store = InfluxStore(host=args.influx_host, port=args.influx_port,
-                        username=args.influx_user, password=args.influx_pass, database=args.influx_db)
+            username=args.influx_user, password_file=args.influx_pass_file, database=args.influx_db)
     source = MQTTSource(host=args.mqtt_host,
                         port=args.mqtt_port, node_names=args.node_name)
     source.register_store(store)
