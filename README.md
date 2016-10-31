@@ -47,6 +47,14 @@ The following log excerpt should make the translation clearer:
     DEBUG:forwarder.MQTTSource:Received MQTT message for topic /weather/bat with payload 4.55
     DEBUG:forwarder.InfluxStore:Writing InfluxDB point: {'fields': {'value': 4.55}, 'tags': {'sensor_node': 'weather'}, 'measurement': 'bat'}
 
+## Complex measurements ##
+
+If the MQTT message payload can be decoded into a JSON object, it is considered a
+complex measurement: a single measurement consisting of several related data points.
+The JSON object is interpreted as multiple InfluxDB field key-value pairs.
+In this case, there is no automatic mapping of the measurement value to the field
+named 'value'.
+
 ### Example InfluxDB query ###
 
     select value from bat;
