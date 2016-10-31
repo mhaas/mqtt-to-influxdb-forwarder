@@ -22,6 +22,7 @@
 import argparse
 import paho.mqtt.client as mqtt
 from influxdb import InfluxDBClient
+import json
 import re
 import logging
 import sys
@@ -33,7 +34,6 @@ class MessageStore(object):
     def store_msg(self, node_name, measurement_name, value):
         raise NotImplementedError()
 
-
 class InfluxStore(MessageStore):
 
     logger = logging.getLogger("forwarder.InfluxStore")
@@ -44,14 +44,17 @@ class InfluxStore(MessageStore):
             host=host, port=port, username=username, password=password, database=database)
         # influx_client.create_database('sensors')
 
-    def store_msg(self, node_name, measurement_name, value):
+
+    def store_msg(self, node_name, measurement_name, data):
+        if not isinstance(data, dict):
+            raise ValueError('data must be given as dict!')
         influx_msg = {
             'measurement': measurement_name,
             'tags': {
                 'sensor_node': node_name,
             },
             'fields': {
-                'value': value,
+                data
             }
         }
         self.logger.debug("Writing InfluxDB point: %s", influx_msg)
@@ -59,7 +62,6 @@ class InfluxStore(MessageStore):
             self.influx_client.write_points([influx_msg])
         except requests.exceptions.ConnectionError as e:
             self.logger.exception(e)
-
 
 class MessageSource(object):
 
@@ -107,16 +109,23 @@ class MQTTSource(MessageSource):
                 self.logger.warn(
                     "Could not extract node name or measurement name from topic %s", msg.topic)
                 return
-            value = msg.payload
-            try:
-                value = float(value)
-            except ValueError:
-                pass
             node_name = match.group('node_name')
             if node_name not in self.node_names:
                 self.logger.warn(
                     "Extract node_name %s from topic, but requested to receive messages for node_name %s", node_name, self.node_name)
             measurement_name = match.group('measurement_name')
+
+            value = msg.payload
+            try:
+                value = json.loads(value)
+            except ValueError:
+                value = { 'value': value }
+            for key in value.keys()
+                try:
+                    value[key] = float(value[key])
+                except ValueError:
+                    pass
+
             for store in self.stores:
                 store.store_msg(node_name, measurement_name, value)
 
