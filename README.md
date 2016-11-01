@@ -55,6 +55,14 @@ The JSON object is interpreted as multiple InfluxDB field key-value pairs.
 In this case, there is no automatic mapping of the measurement value to the field
 named 'value'.
 
+### Example translation ###
+
+An example translation for a complex measurement:
+
+    DEBUG:forwarder.MQTTSource:Received MQTT message for topic /heaterroom/boiler-led with payload {"valid":true,"dark_duty_cycle":0,"color":"amber"}
+    DEBUG:forwarder.InfluxStore:Writing InfluxDB point: {'fields': {u'color': u'amber', u'valid': 1.0, u'dark_duty_cycle': 0.0}, 'tags': {'sensor_node': 'heaterroom'}, 'measurement': 'boiler-led'}
+
+
 ### Example InfluxDB query ###
 
     select value from bat;
