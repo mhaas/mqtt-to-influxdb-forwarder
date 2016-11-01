@@ -53,9 +53,7 @@ class InfluxStore(MessageStore):
             'tags': {
                 'sensor_node': node_name,
             },
-            'fields': {
-                data
-            }
+            'fields': data
         }
         self.logger.debug("Writing InfluxDB point: %s", influx_msg)
         try:
@@ -120,7 +118,7 @@ class MQTTSource(MessageSource):
                 value = json.loads(value)
             except ValueError:
                 value = { 'value': value }
-            for key in value.keys()
+            for key in value.keys():
                 try:
                     value[key] = float(value[key])
                 except ValueError:
