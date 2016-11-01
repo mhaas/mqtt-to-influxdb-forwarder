@@ -143,9 +143,9 @@ def main():
     parser = argparse.ArgumentParser(
         description='MQTT to InfluxDB bridge for IOT data.')
     parser.add_argument('--mqtt-host', required=True, help='MQTT host')
-    parser.add_argument('--mqtt-port', required=True, help='MQTT port')
+    parser.add_argument('--mqtt-port', default="1883", help='MQTT port')
     parser.add_argument('--influx-host', required=True, help='InfluxDB host')
-    parser.add_argument('--influx-port', required=True, help='InfluxDB port')
+    parser.add_argument('--influx-port', default="8086", help='InfluxDB port')
     parser.add_argument('--influx-user', required=True,
                         help='InfluxDB username')
     parser.add_argument('--influx-pass-file', required=True,
