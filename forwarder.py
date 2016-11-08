@@ -116,6 +116,8 @@ class MQTTSource(MessageSource):
             value = msg.payload
             try:
                 value = json.loads(value)
+                if not isinstance(value, dict):
+                    raise ValueError()
             except ValueError:
                 value = { 'value': value }
             for key in value.keys():
