@@ -78,10 +78,11 @@ class MQTTSource(MessageSource):
 
     logger = logging.getLogger("forwarder.MQTTSource")
 
-    def __init__(self, host, port, node_names):
+    def __init__(self, host, port, node_names, stringify_values_for_measurements):
         self.host = host
         self.port = port
         self.node_names = node_names
+        self.stringify = stringify_values_for_measurements
         self._setup_handlers()
 
     def _setup_handlers(self):
@@ -114,20 +115,33 @@ class MQTTSource(MessageSource):
             measurement_name = match.group('measurement_name')
 
             value = msg.payload
+
+            is_value_json_dict = False
             try:
-                value = json.loads(value)
-                if not isinstance(value, dict):
-                    raise ValueError()
+                stored_message = json.loads(value)
+                is_value_json_dict = isinstance(stored_message, dict)
             except ValueError:
-                value = { 'value': value }
-            for key in value.keys():
-                try:
-                    value[key] = float(value[key])
-                except ValueError:
-                    pass
+                pass
+
+            if is_value_json_dict:
+                for key in stored_message.keys():
+                    try:
+                        stored_message[key] = float(stored_message[key])
+                    except ValueError:
+                        pass
+            else:
+                # if message is not a JSON DICT, only then check if we should stringify the value
+                if measurement_name in self.stringify:
+                    value = str(value)
+                else:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
+                stored_message = {'value': value}
 
             for store in self.stores:
-                store.store_msg(node_name, measurement_name, value)
+                store.store_msg(node_name, measurement_name, stored_message)
 
         self.client.on_connect = on_connect
         self.client.on_message = on_message
@@ -155,6 +169,8 @@ def main():
     parser.add_argument('--influx-db', required=True, help='InfluxDB database')
     parser.add_argument('--node-name', required=True,
                         help='Sensor node name', action="append")
+    parser.add_argument('--stringify-values-for-measurements', required=False,
+                        help='Force str() on measurements of the given name', action="append")
     parser.add_argument('--verbose', help='Enable verbose output to stdout',
                         default=False, action='store_true')
     args = parser.parse_args()
@@ -167,7 +183,8 @@ def main():
     store = InfluxStore(host=args.influx_host, port=args.influx_port,
             username=args.influx_user, password_file=args.influx_pass_file, database=args.influx_db)
     source = MQTTSource(host=args.mqtt_host,
-                        port=args.mqtt_port, node_names=args.node_name)
+                        port=args.mqtt_port, node_names=args.node_name,
+                        stringify_values_for_measurements=args.stringify_values_for_measurements)
     source.register_store(store)
     source.start()
 
